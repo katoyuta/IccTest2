@@ -4,10 +4,12 @@
 
 void testApp::setup(){
     // 画面設定
-    ofSetFullscreen(true);
+    //ofSetFullscreen(true);
     ofSetVerticalSync(true);
     ofEnableAlphaBlending();
     ofBackground(11);
+    
+    ofSetFrameRate(60);
     
     // 照明とカメラ
     ofEnableLighting();
@@ -29,7 +31,7 @@ void testApp::setup(){
     verdana.setLineHeight(18.0f);
     //verdana.setLetterSpacing(1.037);
     
-    bike_img.loadImage("bike.png");
+    //bike_img.loadImage("bike.png");
     
     // Leap Motion開始
     leap.open();
@@ -50,6 +52,11 @@ void testApp::setup(){
     colorImage.allocate(webcam_w, webcam_h);
     baseImage.allocate(webcam_w/4, webcam_h/4);
     resultImage.allocate(webcam_w/4, webcam_h/4);
+    
+    //水
+    water.loadImage("img/water.png");
+    
+    debugMode = false;
     
 }
 
@@ -98,13 +105,13 @@ void testApp::update(){
     hands = leap.getSimpleHands();
     
     // フレーム更新して、手が検出されたら
-    if( leap.isFrameNew() && hands.size() ){
+    if( leap.isFrameNew()  ){
         
         //指と手の位置をクリア
         fingerPos[0].clear();
         fingerPos[1].clear();
         handPos.clear();
-
+        
         
         // 画面の大きさにあわせて、スケールをマッピング
         //leap.setMappingX(-230, 230, -ofGetWidth()/2, ofGetWidth()/2);
@@ -129,6 +136,8 @@ void testApp::update(){
                 }
             }
         }
+        
+        /*
         
         //■■■■手をあわせているかの検出■■■■
        //手が２本あるなら
@@ -175,7 +184,7 @@ void testApp::update(){
             bike = false;
         }
         
-        
+        */
         
         
         //リープが動き出したことを合図
@@ -188,7 +197,9 @@ void testApp::update(){
     leap.markFrameAsOld();
     
     
-    
+    //バクテリアupdate
+    bacteria[0].update();
+    bacteria[1].update();
     
 }
 
@@ -201,7 +212,7 @@ void testApp::draw(){
     ofSetColor(255);
     webcam.draw(ofGetWidth(), webcam_y_shift, -webcam_w*webcam_scale, webcam_h*webcam_scale);
     
-    
+    /*
     if (baseImageAvailable) {
         
         ofEnableBlendMode(OF_BLENDMODE_MULTIPLY);
@@ -213,6 +224,7 @@ void testApp::draw(){
         colorImage.draw(200,0);
         resultImage.draw(400,0);
     }
+     */
     
     
     //cam.begin();
@@ -220,66 +232,106 @@ void testApp::draw(){
     glEnable(GL_DEPTH_TEST);
     
     cam.begin(ofRectangle(0, webcam_y_shift, webcam_w*webcam_scale, webcam_h*webcam_scale));
+    //cam.begin();
     
-    
-    ofPushMatrix();
-    ofScale(-1, 1);
-    
-    //手洗ってるときに背景の色をカエル
-    //if(tearai)
-    //{ofBackground(100,100,255);}
-    //else
-    //{ofBackground(31);}
-  
-    
-    // 検出された指の数だけくりかえし
-    for (int h = 0; h < 2; h++) {
-        for(int i = 0; i < fingerPos[h].size(); i++){
-            // 検出された位置に立方体を描画
-            ofSetColor(255);
-            ofBoxPrimitive box;
-            box.setPosition(fingerPos[h][i].x, fingerPos[h][i].y, fingerPos[h][i].z);
-            box.set(10);
-            box.draw();
+    if (debugMode) {
+        
+        ofPushMatrix();
+        ofScale(-1, 1);
+        
+        //手洗ってるときに背景の色をカエル
+        //if(tearai)
+        //{ofBackground(100,100,255);}
+        //else
+        //{ofBackground(31);}
+        
+        // 検出された指の数だけくりかえし
+        for (int h = 0; h < 2; h++) {
+            for(int i = 0; i < fingerPos[h].size(); i++){
+                // 検出された位置に立方体を描画
+                ofSetColor(255);
+                ofBoxPrimitive box;
+                box.setPosition(fingerPos[h][i].x, fingerPos[h][i].y, fingerPos[h][i].z);
+                box.set(10);
+                box.draw();
+            }
         }
-    }
-
-    
-    //手の平の描画
-    for(int i=0; i<handPos.size(); ++i){
         
-        ofSetColor(255);
-        ofBoxPrimitive box2;
-        box2.setPosition(handPos[i].x, handPos[i].y, handPos[i].z);
-        box2.set(30);
-        box2.draw();
         
-        //ofSetColor(100,255,0);
-        //verdana.drawString("   PALM(Z) :" + ofToString(i),handPos[i].x, handPos[i].y);
+        //手の平の描画
+        for(int i=0; i<handPos.size(); ++i){
+            
+            ofSetColor(255);
+            ofBoxPrimitive box2;
+            box2.setPosition(handPos[i].x, handPos[i].y, handPos[i].z);
+            box2.set(30);
+            box2.draw();
+            
+            //ofSetColor(100,255,0);
+            //verdana.drawString("   PALM(Z) :" + ofToString(i),handPos[i].x, handPos[i].y);
+        }
+        
+        ofPopMatrix();
+        
     }
-    
-    ofPopMatrix();
     
     cam.end();
     
     
+    //水
+    ofSetColor(255);
+    ofEnableAlphaBlending();
+    glDisable(GL_DEPTH_TEST);
+    water.draw(0, 0, ofGetWidth(), water.height * ofGetWidth() / water.width );
+    glEnable(GL_DEPTH_TEST);
+    ofDisableAlphaBlending();
+    
+    
+    
+    
     //スクリーン座標に変換！
     
+    float handScale = webcam_h * webcam_scale / ofGetHeight();
+    float hand_x_shift = ( webcam_w * webcam_scale - ofGetWidth() * handScale ) / 2;
+    
+    ofPushMatrix();
+    
+    ofTranslate(hand_x_shift, webcam_y_shift);
+    ofScale(handScale, handScale);
+    
+    
     for(int i=0; i<handPos.size(); ++i){
+        
         ofSetColor(255,0,0);
+        
+        handPos[i].x = -handPos[i].x;
         ofPoint newPos = cam.worldToScreen(handPos[i]);
-        ofCircle(newPos, 30);
+        
+        if (debugMode) {
+            ofCircle(newPos, 30);
+        }
+        
+        if(i < 2){
+            //ばい菌描画！
+            bacteria[i].draw(newPos.x, newPos.y);
+        }
+        
     }
     
-    for (int h = 0; h < 2; h++) {
-        for(int i=0; i<fingerPos[h].size(); ++i){
-            ofSetColor(255,0,0);
-            ofPoint newPos = cam.worldToScreen(fingerPos[h][i]);
-            ofCircle(newPos, 10);
+    if (debugMode) {
+        for (int h = 0; h < 2; h++) {
+            for(int i=0; i<fingerPos[h].size(); ++i){
+                ofSetColor(255,0,0);
+                
+                fingerPos[h][i].x = -fingerPos[h][i].x;
+                ofPoint newPos = cam.worldToScreen(fingerPos[h][i]);
+                ofCircle(newPos, 10);
+            }
         }
     }
     
-    //ばい菌描画!
+    
+    ofPopMatrix();
     
     
     //テキスト表示まわり
@@ -310,8 +362,12 @@ void testApp::draw(){
 
     }
      */
- 
-    verdana.drawString("FRAMERATE: " + ofToString(ofGetFrameRate()), 100, 200);
+    
+    if (debugMode) {
+        ofSetColor(255);
+        verdana.drawString("FRAMERATE: " + ofToString(ofGetFrameRate()), 100, 200);
+    }
+
 }
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
@@ -321,6 +377,10 @@ void testApp::keyPressed(int key){
             
         case 'f':
             ofToggleFullscreen();
+            break;
+        
+        case 'd':
+            debugMode = !debugMode;
             break;
             
         case 'r':

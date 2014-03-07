@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 #include "ofxLeapMotion.h"
+#include "Bacteria.h"
 
 class testApp : public ofBaseApp{
     
@@ -79,5 +80,17 @@ public:
     ofxCvGrayscaleImage resultImage;
     
     bool baseImageAvailable;
+    
+    
+    //バクテリア
+    Bacteria bacteria[2];
+    
+    
+    //水
+    ofImage water;
+    
+    
+    //デバッグモード
+    bool debugMode;
 
 };
