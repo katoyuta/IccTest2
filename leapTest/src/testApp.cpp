@@ -201,6 +201,14 @@ void testApp::update(){
     bacteria[0].update();
     bacteria[1].update();
     
+    if (bacteria[0].dead) {
+        bacteria[0].reset();
+    }
+    
+    if (bacteria[1].dead) {
+        bacteria[1].reset();
+    }
+    
 }
 
 void testApp::draw(){

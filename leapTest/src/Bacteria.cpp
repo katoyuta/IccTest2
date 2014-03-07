@@ -5,9 +5,11 @@
 Bacteria::Bacteria(){
     
     frame = 0;
+    volume = 12;
     
     scale = ofGetWidth()/100.f;
-    
+
+    dead = false;
     
     bacteria[0].loadImage("img/bacteria1.png");
     bacteria[1].loadImage("img/bacteria2.png");
@@ -30,6 +32,41 @@ Bacteria::Bacteria(){
     
 };
 
+void Bacteria::reset(){
+    
+    frame = 0;
+    dead = false;
+    
+    bacteriaPos.clear();
+    bacteriaSpeed.clear();
+    bacteriaType.clear();
+    
+    for (int i = 0; i < volume; i++) {
+        
+        float r = ofRandom(20) * scale;
+        float angle = ofRandom(PI*2) * scale;
+        
+        float s = ofRandom(10);
+        float angle2 = ofRandom(PI*2) * scale;
+        
+        bacteriaPos.push_back( ofPoint( cos(angle)*r, sin(angle)*r) );
+        bacteriaSpeed.push_back( ofPoint( cos(angle2)*s, sin(angle2)*s) );
+        bacteriaType.push_back( ofRandom(4) );
+    }
+    
+}
+
+
+void Bacteria::setElimination(int n){
+    //除菌する
+    
+    for (int i = 0; i < n; i++) {
+        
+        std::vector<ofPoint>::iterator it = bacteriaPos.erase(bacteriaPos.end()-1);
+        
+    }
+}
+
 
 void Bacteria::update(){
     
@@ -50,11 +87,23 @@ void Bacteria::update(){
         }
     }
     
+    
+    frame ++;
+    
+    if (!dead && frame%45 ==0) {
+        
+        setElimination(1);
+        
+        if(bacteriaPos.size() == 0){
+            dead = true;
+        }
+    }
+    
 }
 
 void Bacteria::draw(int x, int y){
     
-    ofSetColor(255);
+    ofSetColor(255,255,255,200);
    
     ofEnableAlphaBlending();
     

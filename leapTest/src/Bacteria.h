@@ -10,20 +10,25 @@ public:
     void update();
     void draw(int x, int y);
     
+    void reset();
+    void setElimination(int n);
+    
     bool dead;
     
 private:
     
-    int frame = 0;
-    int volume = 12;
+    int frame;
+    int volume;
     
-    float scale = 1;
+    float scale;
     
     int type;
     
     vector<ofPoint> bacteriaPos;
     vector<ofPoint> bacteriaSpeed;
     vector<int> bacteriaType;
+    
+    
     
     ofImage bacteria[5];
     
