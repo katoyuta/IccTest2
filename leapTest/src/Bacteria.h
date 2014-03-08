@@ -7,28 +7,28 @@ public:
     
     Bacteria();
     
-    void update();
+    void update(bool visible);
     void draw(int x, int y);
     
-    void reset();
-    void setElimination(int n);
+    void reset(); //菌の数を初期化
+    void setElimination(int n); //菌の数を減らす
     
     bool dead;
     
 private:
     
     int frame;
-    int volume;
-    
     float scale;
     
-    int type;
+    
+    int volume; //菌の数
+    
+    float alpha;
     
     vector<ofPoint> bacteriaPos;
     vector<ofPoint> bacteriaSpeed;
     vector<int> bacteriaType;
-    
-    
+    vector<float> bacteriaRotation;
     
     ofImage bacteria[5];
     

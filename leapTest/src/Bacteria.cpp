@@ -5,7 +5,9 @@
 Bacteria::Bacteria(){
     
     frame = 0;
-    volume = 12;
+    volume = 40;
+    
+    alpha = 0;
     
     scale = ofGetWidth()/100.f;
 
@@ -27,7 +29,8 @@ Bacteria::Bacteria(){
         
         bacteriaPos.push_back( ofPoint( cos(angle)*r, sin(angle)*r) );
         bacteriaSpeed.push_back( ofPoint( cos(angle2)*s, sin(angle2)*s) );
-        bacteriaType.push_back( ofRandom(4) );
+        bacteriaType.push_back( ofRandom(5) );
+        bacteriaRotation.push_back( ofRandom(360) );
     }
     
 };
@@ -40,6 +43,7 @@ void Bacteria::reset(){
     bacteriaPos.clear();
     bacteriaSpeed.clear();
     bacteriaType.clear();
+    bacteriaRotation.clear();
     
     for (int i = 0; i < volume; i++) {
         
@@ -51,7 +55,8 @@ void Bacteria::reset(){
         
         bacteriaPos.push_back( ofPoint( cos(angle)*r, sin(angle)*r) );
         bacteriaSpeed.push_back( ofPoint( cos(angle2)*s, sin(angle2)*s) );
-        bacteriaType.push_back( ofRandom(4) );
+        bacteriaType.push_back( ofRandom(5) );
+        bacteriaRotation.push_back( ofRandom(360) );
     }
     
 }
@@ -68,7 +73,13 @@ void Bacteria::setElimination(int n){
 }
 
 
-void Bacteria::update(){
+void Bacteria::update(bool visible){
+    
+    if (visible) {
+        alpha += ( 1 - alpha ) * 0.1f;
+    }else{
+        alpha += ( 0 - alpha ) * 0.1f;
+    }
     
     for (int i = 0; i < bacteriaPos.size(); i++) {
         
@@ -103,9 +114,11 @@ void Bacteria::update(){
 
 void Bacteria::draw(int x, int y){
     
-    ofSetColor(255,255,255,200);
+    ofSetColor(255,255,255,200 * alpha);
    
     ofEnableAlphaBlending();
+    
+    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
     
     glDisable(GL_DEPTH_TEST);
     
@@ -115,15 +128,22 @@ void Bacteria::draw(int x, int y){
         
         //ofCircle(bacteriaPos[i].x + x, bacteriaPos[i].y + y, 2 * scale);
         
-        float w = bacteria[bacteriaType[i]].width * scale / 20.f;
-        float h = bacteria[bacteriaType[i]].height * scale / 20.f;
+        float w = bacteria[bacteriaType[i]].width * scale / 30.f;
+        float h = bacteria[bacteriaType[i]].height * scale / 30.f;
         
+        ofPushMatrix();
+        ofTranslate(pos.x, pos.y);
+        ofRotate(bacteriaRotation[i]);
         
-        bacteria[bacteriaType[i]].draw(pos.x - w/2, pos.y -h/2, w, h);
+        //bacteria[bacteriaType[i]].draw(pos.x - w/2, pos.y -h/2, w, h);
+        bacteria[bacteriaType[i]].draw( -w/2, -h/2, w, h);
         
+        ofPopMatrix();
     }
     
     glEnable(GL_DEPTH_TEST);
+    
+    ofDisableBlendMode();
     
     ofDisableAlphaBlending();
 }

@@ -70,16 +70,8 @@ public:
     ofVideoGrabber webcam;
     
     int webcam_w, webcam_h;
-    
     float webcam_scale;
-    int webcam_y_shift;
-    
-    //差分
-    ofxCvColorImage baseImage;
-    ofxCvColorImage colorImage;
-    ofxCvGrayscaleImage resultImage;
-    
-    bool baseImageAvailable;
+    ofVec2f webcam_pos;
     
     
     //バクテリア

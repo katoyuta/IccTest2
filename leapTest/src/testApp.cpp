@@ -41,17 +41,16 @@ void testApp::setup(){
     webcam_w = 640;
     webcam_h = 480;
     
-    webcam_scale = (float)ofGetWidth()/(float)webcam_w;
-    webcam_y_shift = ((float)ofGetHeight()-(float)webcam_h*webcam_scale)/2;
+    int w = ofGetWidth();
+    int h = ofGetHeight();
+    
+    //高さにフィットさせる
+    webcam_scale = (float)h/(float)webcam_h;
+    webcam_pos.set( ((float)w-(float)webcam_w*webcam_scale)/2, 0 );
     
     webcam.setDeviceID(0);
     webcam.initGrabber(webcam_w, webcam_h);
     
-    
-    //背景差分
-    colorImage.allocate(webcam_w, webcam_h);
-    baseImage.allocate(webcam_w/4, webcam_h/4);
-    resultImage.allocate(webcam_w/4, webcam_h/4);
     
     //水
     water.loadImage("img/water.png");
@@ -67,40 +66,6 @@ void testApp::update(){
     webcam.update();
     
     
-    if (webcam.isFrameNew()) {
-        
-        colorImage.allocate(webcam_w, webcam_h);
-        colorImage.setFromPixels(webcam.getPixels(),webcam_w, webcam_h);
-        
-        colorImage.resize(webcam_w/4, webcam_h/4);
-        colorImage.mirror(0, 1);
-        
-        resultImage.set(255);
-        
-        if (!baseImageAvailable) {
-            baseImage.setFromPixels(colorImage.getPixels(), colorImage.width, colorImage.height);
-            baseImageAvailable = true;
-        }
-        
-        unsigned char *px = colorImage.getPixels();
-        unsigned char *bpx = baseImage.getPixels();
-        unsigned char *rpx = resultImage.getPixels();
-        
-        for (int x=0; x<colorImage.width; x++) {
-            for (int y=0; y<colorImage.height; y++) {
-                
-                int dr = abs(px[colorImage.width*3*y + x*3] - bpx[colorImage.width*3*y + x*3]);
-                int dg = abs(px[colorImage.width*3*y + x*3+1] - bpx[colorImage.width*3*y + x*3+1]);
-                int db = abs(px[colorImage.width*3*y + x*3+2] - bpx[colorImage.width*3*y + x*3+2]);
-                
-                if(dr > 20 || dg > 20 || db > 20 ){
-                    rpx[colorImage.width*y + x] = 80;
-                }
-            }
-        }
-    }
-    
-    
     // 検出された手の数だけ、ofxLeapMotionSimpleHandのvector配列に追加
     hands = leap.getSimpleHands();
     
@@ -113,19 +78,12 @@ void testApp::update(){
         handPos.clear();
         
         
-        // 画面の大きさにあわせて、スケールをマッピング
-        //leap.setMappingX(-230, 230, -ofGetWidth()/2, ofGetWidth()/2);
-        //leap.setMappingY(90, 490, -ofGetHeight()/2, ofGetHeight()/2);
-        //leap.setMappingZ(-150, 150, -200, 200);
-        
-        
         // 検出された手の数だけくりかえし
         for(int i = 0; i < hands.size(); i++){
             
             // 手の位置を取得
             handPos.push_back(hands[i].handPos);
-
-            
+    
             // 検出された指の数だけくりかえし
             for(int j = 0; j < hands[i].fingers.size(); j++){
                 // 位置をvectorに保存
@@ -198,8 +156,17 @@ void testApp::update(){
     
     
     //バクテリアupdate
-    bacteria[0].update();
-    bacteria[1].update();
+    if (hands.size() > 1) {
+        bacteria[0].update(true);
+        bacteria[1].update(true);
+    }else if (hands.size() > 0) {
+        bacteria[0].update(true);
+        bacteria[1].update(false);
+    }else{
+        bacteria[0].update(false);
+        bacteria[1].update(false);
+    }
+    
     
     if (bacteria[0].dead) {
         bacteria[0].reset();
@@ -218,7 +185,8 @@ void testApp::draw(){
     glDisable(GL_DEPTH_TEST);
     
     ofSetColor(255);
-    webcam.draw(ofGetWidth(), webcam_y_shift, -webcam_w*webcam_scale, webcam_h*webcam_scale);
+    webcam.draw(ofGetWidth() - webcam_pos.x, webcam_pos.y, -webcam_w*webcam_scale, webcam_h*webcam_scale);
+    
     
     /*
     if (baseImageAvailable) {
@@ -239,7 +207,9 @@ void testApp::draw(){
     
     glEnable(GL_DEPTH_TEST);
     
-    cam.begin(ofRectangle(0, webcam_y_shift, webcam_w*webcam_scale, webcam_h*webcam_scale));
+    cam.begin(ofRectangle(ofGetWidth() - webcam_pos.x, webcam_pos.y, -webcam_w*webcam_scale, webcam_h*webcam_scale));
+    
+    
     //cam.begin();
     
     if (debugMode) {
@@ -302,18 +272,17 @@ void testApp::draw(){
     float handScale = webcam_h * webcam_scale / ofGetHeight();
     float hand_x_shift = ( webcam_w * webcam_scale - ofGetWidth() * handScale ) / 2;
     
-    ofPushMatrix();
-    
-    ofTranslate(hand_x_shift, webcam_y_shift);
-    ofScale(handScale, handScale);
-    
     
     for(int i=0; i<handPos.size(); ++i){
         
         ofSetColor(255,0,0);
         
-        handPos[i].x = -handPos[i].x;
-        ofPoint newPos = cam.worldToScreen(handPos[i]);
+        //handPos[i].x = -handPos[i].x;
+        //左右反転
+        ofPoint mirrorPos;
+        mirrorPos.set(-handPos[i].x, handPos[i].y);
+        
+        ofPoint newPos = cam.worldToScreen(mirrorPos);//handPos[i]);
         
         if (debugMode) {
             ofCircle(newPos, 30);
@@ -338,8 +307,6 @@ void testApp::draw(){
         }
     }
     
-    
-    ofPopMatrix();
     
     
     //テキスト表示まわり
@@ -391,14 +358,6 @@ void testApp::keyPressed(int key){
             debugMode = !debugMode;
             break;
             
-        case 'r':
-            
-            if (baseImageAvailable) {
-                baseImage.setFromPixels(colorImage.getPixels(), colorImage.width, colorImage.height);
-            }
-            
-            break;
-            
     }
     
 }
@@ -406,6 +365,7 @@ void testApp::keyPressed(int key){
 //--------------------------------------------------------------
 void testApp::windowResized(int w, int h){
     //幅をフィットさせてセンタリング
-    webcam_scale = (float)w/(float)webcam_w;
-    webcam_y_shift = ((float)h-(float)webcam_h*webcam_scale)/2;
+    webcam_scale = (float)h/(float)webcam_h;
+    webcam_pos.set( ((float)w-(float)webcam_w*webcam_scale)/2, 0 );
+
 }
